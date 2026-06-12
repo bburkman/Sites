@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bible in a Year</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #F5EFE0;
+    --parchment-dark: #EDE4CC;
+    --ink: #1C1A14;
+    --ink-light: #4A4535;
+    --gold: #B8923A;
+    --gold-light: #D4AE60;
+    --gold-pale: #F0DFA8;
+    --navy: #1E2D4A;
+    --read: #2A6E3F;
+    --read-bg: #D8EFE0;
+    --unread: #C4B99A;
+    --shadow: rgba(28,26,20,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--parchment);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    padding: 16px 20px 12px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .header-top {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+  }
+
+  /* Progress ring */
+  .ring-wrap {
+    flex-shrink: 0; position: relative; width: 52px; height: 52px;
+  }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 4; }
+  .ring-fill {
+    fill: none; stroke: var(--gold); stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 138.23; /* 2π×22 */
+    stroke-dashoffset: 138.23;
+    transition: stroke-dashoffset 0.6s ease;
+  }
+  .ring-pct {
+    position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--gold-light);
+    letter-spacing: -0.3px;
+  }
+
+  .header-text h1 {
+    font-family: 'IM Fell English', serif;
+    font-size: 20px; color: #fff; line-height: 1.1;
+  }
+  .header-text .subtitle {
+    font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.1); border-radius: 4px;
+    height: 6px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 4px; transition: width 0.5s ease; width: 0%;
+  }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; overflow-x: auto; gap: 4px;
+    padding: 10px 16px; background: var(--parchment-dark);
+    border-bottom: 1px solid #D9CDB0;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 6px 14px;
+    border-radius: 20px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.2px;
+    background: transparent; color: var(--ink-light);
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--navy); color: #fff;
+    box-shadow: 0 2px 6px var(--shadow);
+  }
+
+  /* ── SEARCH ── */
+  .search-wrap {
+    padding: 10px 16px;
+    background: var(--parchment);
+    border-bottom: 1px solid #D9CDB0;
+  }
+  .search-wrap input {
+    width: 100%; padding: 8px 14px;
+    border: 1.5px solid #D0C4A8; border-radius: 22px;
+    background: #fff; font-size: 14px; color: var(--ink);
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--gold); }
+
+  /* ── TESTAMENT DIVIDER ── */
+  .testament-header {
+    padding: 14px 16px 6px;
+    font-family: 'IM Fell English', serif;
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    border-bottom: 1px solid var(--parchment-dark);
+  }
+
+  /* ── BOOK CARDS ── */
+  .books { padding: 8px 12px 80px; }
+  .book-card {
+    background: #fff;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px var(--shadow);
+    overflow: hidden;
+    border-left: 3px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .book-card.complete { border-left-color: var(--read); }
+  .book-card.partial  { border-left-color: var(--gold); }
+
+  .book-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; cursor: pointer;
+  }
+  .book-name {
+    font-family: 'IM Fell English', serif;
+    font-size: 17px; flex: 1;
+  }
+  .book-meta {
+    font-size: 11px; color: var(--ink-light); white-space: nowrap;
+  }
+  .chevron {
+    width: 18px; height: 18px; flex-shrink: 0;
+    color: var(--unread); transition: transform 0.25s;
+  }
+  .book-card.open .chevron { transform: rotate(180deg); }
+
+  .book-mini-bar {
+    height: 3px; background: var(--parchment-dark);
+  }
+  .book-mini-fill {
+    height: 100%; background: var(--read);
+    transition: width 0.4s ease;
+  }
+
+  /* ── CHAPTERS GRID ── */
+  .chapters {
+    display: none; padding: 10px 12px 14px;
+    gap: 7px;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  }
+  .book-card.open .chapters { display: grid; }
+
+  .ch-btn {
+    aspect-ratio: 1; border-radius: 6px;
+    border: none; cursor: pointer;
+    font-size: 12px; font-weight: 500;
+    background: var(--parchment-dark); color: var(--ink-light);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .ch-btn.read {
+    background: var(--read-bg); color: var(--read);
+    font-weight: 600;
+  }
+  .ch-btn.read::after {
+    content: '✓';
+    position: absolute; top: 1px; right: 3px;
+    font-size: 8px; color: var(--read); opacity: 0.7;
+  }
+  .ch-btn:active { transform: scale(0.9); }
+
+  /* ── BOOK ACTIONS ── */
+  .book-actions {
+    display: none; padding: 0 12px 10px;
+    gap: 8px;
+  }
+  .book-card.open .book-actions { display: flex; }
+  .action-btn {
+    flex: 1; padding: 7px 4px; border-radius: 7px; border: none;
+    cursor: pointer; font-size: 12px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-all   { background: var(--read-bg); color: var(--read); }
+  .btn-none  { background: #FEE8E8; color: #B04040; }
+  .action-btn:hover { filter: brightness(0.95); }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed; bottom: 22px; right: 18px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--navy); border: none;
+    box-shadow: 0 4px 14px rgba(30,45,74,0.45);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--gold-light);
+    z-index: 200; transition: transform 0.2s;
+  }
+  .fab:active { transform: scale(0.9); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 300;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--parchment); width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 36px;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'IM Fell English', serif;
+    font-size: 22px; margin-bottom: 16px; color: var(--navy);
+  }
+  .modal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .stat-box {
+    background: #fff; border-radius: 10px; padding: 14px 10px; text-align: center;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .stat-num { font-size: 24px; font-weight: 600; color: var(--navy); }
+  .stat-lbl { font-size: 11px; color: var(--ink-light); margin-top: 2px; }
+  .modal-close {
+    margin-top: 18px; width: 100%; padding: 12px;
+    border-radius: 10px; border: none; background: var(--navy);
+    color: #fff; font-size: 15px; font-weight: 500; cursor: pointer;
+  }
+  .reset-btn {
+    margin-top: 10px; width: 100%; padding: 10px;
+    border-radius: 10px; border: 1.5px solid #E0C0C0;
+    background: transparent; color: #B04040;
+    font-size: 14px; cursor: pointer;
+  }
+
+  /* empty state */
+  .empty { text-align: center; padding: 40px 20px; color: var(--ink-light); }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="ring-wrap">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle class="ring-bg" cx="26" cy="26" r="22"/>
+        <circle class="ring-fill" id="ringFill" cx="26" cy="26" r="22"/>
+      </svg>
+      <div class="ring-pct" id="ringPct">0%</div>
+    </div>
+    <div class="header-text">
+      <h1>Bible in a Year</h1>
+      <div class="subtitle" id="headerSub">0 of 1,189 chapters read</div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar"></div>
+  </div>
+  <div class="progress-label">
+    <span id="progressLeft">0% complete</span>
+    <span id="progressRight">~365 days</span>
+  </div>
+</header>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-filter="all">All</button>
+  <button class="tab" data-filter="ot">Old Testament</button>
+  <button class="tab" data-filter="nt">New Testament</button>
+  <button class="tab" data-filter="unread">Unread</button>
+  <button class="tab" data-filter="inprogress">In Progress</button>
+  <button class="tab" data-filter="complete">Complete</button>
+</div>
+
+<div class="search-wrap">
+  <input type="search" id="searchInput" placeholder="Search a book…" autocomplete="off">
+</div>
+
+<div class="books" id="booksContainer"></div>
+
+<button class="fab" id="fabBtn" title="Stats">📖</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Your Progress</h2>
+    <div class="modal-stats" id="modalStats"></div>
+    <button class="modal-close" id="modalClose">Close</button>
+    <button class="reset-btn" id="resetBtn">Reset all progress…</button>
+  </div>
+</div>
+
+<script>
+// ── BIBLE DATA ──────────────────────────────────────────────────────────────
+const BOOKS = [
+  // Old Testament
+  {id:'gen',  name:'Genesis',         t:'ot', ch:50},
+  {id:'exo',  name:'Exodus',          t:'ot', ch:40},
+  {id:'lev',  name:'Leviticus',       t:'ot', ch:27},
+  {id:'num',  name:'Numbers',         t:'ot', ch:36},
+  {id:'deu',  name:'Deuteronomy',     t:'ot', ch:34},
+  {id:'jos',  name:'Joshua',          t:'ot', ch:24},
+  {id:'jdg',  name:'Judges',          t:'ot', ch:21},
+  {id:'rut',  name:'Ruth',            t:'ot', ch:4},
+  {id:'1sa',  name:'1 Samuel',        t:'ot', ch:31},
+  {id:'2sa',  name:'2 Samuel',        t:'ot', ch:24},
+  {id:'1ki',  name:'1 Kings',         t:'ot', ch:22},
+  {id:'2ki',  name:'2 Kings',         t:'ot', ch:25},
+  {id:'1ch',  name:'1 Chronicles',    t:'ot', ch:29},
+  {id:'2ch',  name:'2 Chronicles',    t:'ot', ch:36},
+  {id:'ezr',  name:'Ezra',            t:'ot', ch:10},
+  {id:'neh',  name:'Nehemiah',        t:'ot', ch:13},
+  {id:'est',  name:'Esther',          t:'ot', ch:10},
+  {id:'job',  name:'Job',             t:'ot', ch:42},
+  {id:'psa',  name:'Psalms',          t:'ot', ch:150},
+  {id:'pro',  name:'Proverbs',        t:'ot', ch:31},
+  {id:'ecc',  name:'Ecclesiastes',    t:'ot', ch:12},
+  {id:'sng',  name:'Song of Solomon', t:'ot', ch:8},
+  {id:'isa',  name:'Isaiah',          t:'ot', ch:66},
+  {id:'jer',  name:'Jeremiah',        t:'ot', ch:52},
+  {id:'lam',  name:'Lamentations',    t:'ot', ch:5},
+  {id:'eze',  name:'Ezekiel',         t:'ot', ch:48},
+  {id:'dan',  name:'Daniel',          t:'ot', ch:12},
+  {id:'hos',  name:'Hosea',           t:'ot', ch:14},
+  {id:'joe',  name:'Joel',            t:'ot', ch:3},
+  {id:'amo',  name:'Amos',            t:'ot', ch:9},
+  {id:'oba',  name:'Obadiah',         t:'ot', ch:1},
+  {id:'jon',  name:'Jonah',           t:'ot', ch:4},
+  {id:'mic',  name:'Micah',           t:'ot', ch:7},
+  {id:'nah',  name:'Nahum',           t:'ot', ch:3},
+  {id:'hab',  name:'Habakkuk',        t:'ot', ch:3},
+  {id:'zep',  name:'Zephaniah',       t:'ot', ch:3},
+  {id:'hag',  name:'Haggai',          t:'ot', ch:2},
+  {id:'zec',  name:'Zechariah',       t:'ot', ch:14},
+  {id:'mal',  name:'Malachi',         t:'ot', ch:4},
+  // New Testament
+  {id:'mat',  name:'Matthew',         t:'nt', ch:28},
+  {id:'mrk',  name:'Mark',            t:'nt', ch:16},
+  {id:'luk',  name:'Luke',            t:'nt', ch:24},
+  {id:'jhn',  name:'John',            t:'nt', ch:21},
+  {id:'act',  name:'Acts',            t:'nt', ch:28},
+  {id:'rom',  name:'Romans',          t:'nt', ch:16},
+  {id:'1co',  name:'1 Corinthians',   t:'nt', ch:16},
+  {id:'2co',  name:'2 Corinthians',   t:'nt', ch:13},
+  {id:'gal',  name:'Galatians',       t:'nt', ch:6},
+  {id:'eph',  name:'Ephesians',       t:'nt', ch:6},
+  {id:'php',  name:'Philippians',     t:'nt', ch:4},
+  {id:'col',  name:'Colossians',      t:'nt', ch:4},
+  {id:'1th',  name:'1 Thessalonians', t:'nt', ch:5},
+  {id:'2th',  name:'2 Thessalonians', t:'nt', ch:3},
+  {id:'1ti',  name:'1 Timothy',       t:'nt', ch:6},
+  {id:'2ti',  name:'2 Timothy',       t:'nt', ch:4},
+  {id:'tit',  name:'Titus',           t:'nt', ch:3},
+  {id:'phm',  name:'Philemon',        t:'nt', ch:1},
+  {id:'heb',  name:'Hebrews',         t:'nt', ch:13},
+  {id:'jas',  name:'James',           t:'nt', ch:5},
+  {id:'1pe',  name:'1 Peter',         t:'nt', ch:5},
+  {id:'2pe',  name:'2 Peter',         t:'nt', ch:3},
+  {id:'1jn',  name:'1 John',          t:'nt', ch:5},
+  {id:'2jn',  name:'2 John',          t:'nt', ch:1},
+  {id:'3jn',  name:'3 John',          t:'nt', ch:1},
+  {id:'jud',  name:'Jude',            t:'nt', ch:1},
+  {id:'rev',  name:'Revelation',      t:'nt', ch:22},
+];
+
+const TOTAL_CH = BOOKS.reduce((s,b)=>s+b.ch,0); // 1189
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let read = {};      // { bookId: Set of chapter numbers (1-based) }
+let openBook = null;
+let activeFilter = 'all';
+let searchQ = '';
+
+function save() {
+  const serial = {};
+  for (const [k,v] of Object.entries(read)) serial[k] = [...v];
+  localStorage.setItem('bibleTracker_v1', JSON.stringify(serial));
+}
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('bibleTracker_v1') || '{}');
+    for (const [k,v] of Object.entries(raw)) read[k] = new Set(v);
+  } catch(e) { read = {}; }
+}
+
+function readCount(bookId) { return (read[bookId]||new Set()).size; }
+function totalRead()       { return BOOKS.reduce((s,b)=>s+readCount(b.id),0); }
+
+function toggleChapter(bookId, ch) {
+  if (!read[bookId]) read[bookId] = new Set();
+  if (read[bookId].has(ch)) read[bookId].delete(ch);
+  else read[bookId].add(ch);
+  save();
+}
+function markAll(bookId, book) {
+  read[bookId] = new Set(Array.from({length:book.ch},(_,i)=>i+1));
+  save();
+}
+function markNone(bookId) {
+  read[bookId] = new Set();
+  save();
+}
+
+// ── RENDER ──────────────────────────────────────────────────────────────────
+function getFilteredBooks() {
+  return BOOKS.filter(b => {
+    if (activeFilter === 'ot' && b.t !== 'ot') return false;
+    if (activeFilter === 'nt' && b.t !== 'nt') return false;
+    const rc = readCount(b.id);
+    if (activeFilter === 'unread'     && rc > 0)            return false;
+    if (activeFilter === 'inprogress' && (rc===0||rc===b.ch)) return false;
+    if (activeFilter === 'complete'   && rc !== b.ch)       return false;
+    if (searchQ && !b.name.toLowerCase().includes(searchQ)) return false;
+    return true;
+  });
+}
+
+function renderHeader() {
+  const n = totalRead();
+  const pct = Math.round(n/TOTAL_CH*100);
+  document.getElementById('headerSub').textContent =
+    `${n.toLocaleString()} of ${TOTAL_CH.toLocaleString()} chapters read`;
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressLeft').textContent = pct+'% complete';
+  const daysLeft = Math.max(0, Math.round((TOTAL_CH-n)/3.26));
+  document.getElementById('progressRight').textContent =
+    n===TOTAL_CH ? '🎉 Complete!' : `~${daysLeft}d remaining`;
+
+  // ring
+  const circ = 138.23;
+  document.getElementById('ringFill').style.strokeDashoffset = circ - circ*(pct/100);
+  document.getElementById('ringPct').textContent = pct+'%';
+}
+
+function renderBooks() {
+  const container = document.getElementById('booksContainer');
+  const filtered = getFilteredBooks();
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div>No books found.</div>`;
+    return;
+  }
+
+  // Group by testament for dividers
+  let html = '';
+  let lastT = null;
+  for (const book of filtered) {
+    if (book.t !== lastT) {
+      html += `<div class="testament-header">${book.t==='ot'?'Old Testament':'New Testament'}</div>`;
+      lastT = book.t;
+    }
+    html += buildBookCard(book);
+  }
+  container.innerHTML = html;
+
+  // re-attach events
+  container.querySelectorAll('.book-header').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      openBook = openBook === id ? null : id;
+      renderBooks();
+    });
+  });
+  container.querySelectorAll('.ch-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleChapter(btn.dataset.book, +btn.dataset.ch);
+      renderHeader();
+      // fast update: just toggle class on the button
+      btn.classList.toggle('read');
+      const card = btn.closest('.book-card');
+      updateCardMeta(card, btn.dataset.book);
+    });
+  });
+  container.querySelectorAll('.btn-all').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      markAll(id, BOOKS.find(b=>b.id===id));
+      renderHeader(); renderBooks();
+    });
+  });
+  container.querySelectorAll('.btn-none').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      markNone(id);
+      renderHeader(); renderBooks();
+    });
+  });
+
+  // scroll open book into view
+  if (openBook) {
+    const el = container.querySelector(`[data-card="${openBook}"]`);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+}
+
+function buildBookCard(book) {
+  const rc = readCount(book.id);
+  const pct = Math.round(rc/book.ch*100);
+  const status = rc===0?'':'complete'?pct===100?'complete':'partial':'';
+  const isOpen = openBook === book.id;
+  const statusClass = rc===book.ch?'complete':rc>0?'partial':'';
+
+  let chapters = '';
+  for (let c=1; c<=book.ch; c++) {
+    const isRead = (read[book.id]||new Set()).has(c);
+    chapters += `<button class="ch-btn${isRead?' read':''}" data-book="${book.id}" data-ch="${c}">${c}</button>`;
+  }
+
+  return `
+  <div class="book-card ${statusClass} ${isOpen?'open':''}" data-card="${book.id}">
+    <div class="book-header" data-id="${book.id}">
+      <span class="book-name">${book.name}</span>
+      <span class="book-meta" id="meta-${book.id}">${rc}/${book.ch}</span>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+    <div class="book-mini-bar">
+      <div class="book-mini-fill" id="bar-${book.id}" style="width:${pct}%"></div>
+    </div>
+    <div class="chapters">${chapters}</div>
+    <div class="book-actions">
+      <button class="action-btn btn-all" data-id="${book.id}">✓ Mark all read</button>
+      <button class="action-btn btn-none" data-id="${book.id}">✗ Mark all unread</button>
+    </div>
+  </div>`;
+}
+
+function updateCardMeta(card, bookId) {
+  const book = BOOKS.find(b=>b.id===bookId);
+  const rc = readCount(bookId);
+  const pct = Math.round(rc/book.ch*100);
+  const meta = card.querySelector(`#meta-${bookId}`);
+  const bar  = card.querySelector(`#bar-${bookId}`);
+  if (meta) meta.textContent = `${rc}/${book.ch}`;
+  if (bar)  bar.style.width = pct+'%';
+  card.classList.toggle('complete', rc===book.ch);
+  card.classList.toggle('partial',  rc>0 && rc<book.ch);
+}
+
+// ── STATS MODAL ─────────────────────────────────────────────────────────────
+function openModal() {
+  const n = totalRead();
+  const otRead = BOOKS.filter(b=>b.t==='ot').reduce((s,b)=>s+readCount(b.id),0);
+  const ntRead = BOOKS.filter(b=>b.t==='nt').reduce((s,b)=>s+readCount(b.id),0);
+  const otTotal = BOOKS.filter(b=>b.t==='ot').reduce((s,b)=>s+b.ch,0);
+  const ntTotal = BOOKS.filter(b=>b.t==='nt').reduce((s,b)=>s+b.ch,0);
+  const booksComplete = BOOKS.filter(b=>readCount(b.id)===b.ch).length;
+  const pct = Math.round(n/TOTAL_CH*100);
+
+  document.getElementById('modalStats').innerHTML = `
+    <div class="stat-box">
+      <div class="stat-num">${n}</div>
+      <div class="stat-lbl">Chapters Read</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${pct}%</div>
+      <div class="stat-lbl">Complete</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${booksComplete}</div>
+      <div class="stat-lbl">Books Finished</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${otRead}</div>
+      <div class="stat-lbl">OT Chapters<br><small style="color:#aaa">${otTotal} total</small></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${ntRead}</div>
+      <div class="stat-lbl">NT Chapters<br><small style="color:#aaa">${ntTotal} total</small></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">${TOTAL_CH-n}</div>
+      <div class="stat-lbl">Remaining</div>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// ── EVENTS ──────────────────────────────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  activeFilter = tab.dataset.filter;
+  openBook = null;
+  renderBooks();
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQ = e.target.value.toLowerCase().trim();
+  openBook = null;
+  renderBooks();
+});
+
+document.getElementById('fabBtn').addEventListener('click', openModal);
+document.getElementById('modalClose').addEventListener('click', () =>
+  document.getElementById('modalOverlay').classList.remove('open'));
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('open');
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('Reset ALL progress? This cannot be undone.')) {
+    read = {};
+    save();
+    openBook = null;
+    document.getElementById('modalOverlay').classList.remove('open');
+    renderHeader();
+    renderBooks();
+  }
+});
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+load();
+renderHeader();
+renderBooks();
+</script>
+</body>
+</html>
